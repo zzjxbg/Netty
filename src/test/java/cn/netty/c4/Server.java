@@ -12,6 +12,9 @@ import java.util.List;
 
 import static cn.netty.c1.ByteBufferUtil.debugRead;
 
+/**
+ * 阻塞模式下,某个方法的执行都会影响另一个方法的执行
+ */
 @Slf4j
 public class Server {
     public static void main(String[] args) throws IOException {
