@@ -56,10 +56,19 @@ public class Server_Selector {
                     sckey.interestOps(SelectionKey.OP_READ);
                     log.debug("{}",sc);
                 } else if (key.isReadable()) { // 如果是read
-                    SocketChannel channel = (SocketChannel) key.channel();
-                    channel.read(buffer);
-                    buffer.flip();
-                    debugRead(buffer);
+                    try {
+                        SocketChannel channel = (SocketChannel) key.channel(); //拿到触发事件的channel
+                        int read = channel.read(buffer); //如果是正常断开,read的方法的返回值是-1
+                        if (read == -1) {
+                            key.cancel();
+                        } else {
+                            buffer.flip();
+                            debugRead(buffer);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        key.cancel();  //因为客户端断开了,因此需要将key取消(从selector的keys集合中真正删除key)
+                    }
                 }
 //                key.cancel();
             }
