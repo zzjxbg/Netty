@@ -36,15 +36,17 @@ public class Server_Selector {
         ssc.bind(new InetSocketAddress(8080));
         while(true) {
            //3.select方法,没有事件发生,线程阻塞,有事件发生,线程才会恢复运行
+            //select在事件未处理时,它不会阻塞,事件发生后要么处理,要么取消,不能置之不理
             selector.select();
            //4.处理事件,selectedKeys内部包含了所有发生的事件
             Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
             while(iter.hasNext()) {
                 SelectionKey key = iter.next();
                 log.debug("key:{}",key);
-                ServerSocketChannel channel = (ServerSocketChannel) key.channel();
-                SocketChannel sc = channel.accept();
-                log.debug("{}",sc);
+//                ServerSocketChannel channel = (ServerSocketChannel) key.channel();
+//                SocketChannel sc = channel.accept();
+//                log.debug("{}",sc);
+                key.cancel();
             }
         }
     }
