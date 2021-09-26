@@ -43,10 +43,21 @@ public class Server_Selector {
             while(iter.hasNext()) {
                 SelectionKey key = iter.next();
                 log.debug("key:{}",key);
-//                ServerSocketChannel channel = (ServerSocketChannel) key.channel();
-//                SocketChannel sc = channel.accept();
-//                log.debug("{}",sc);
-                key.cancel();
+                //5.区分事件类型
+                if (key.isAcceptable()) { // 如果是accept
+                    ServerSocketChannel channel = (ServerSocketChannel) key.channel();
+                    SocketChannel sc = channel.accept();
+                    sc.configureBlocking(false);
+                    SelectionKey sckey = sc.register(selector,0,null);
+                    sckey.interestOps(SelectionKey.OP_READ);
+                    log.debug("{}",sc);
+                } else if (key.isReadable()) { // 如果是read
+                    SocketChannel channel = (SocketChannel) key.channel();
+                    channel.read(buffer);
+                    buffer.flip();
+                    debugRead(buffer);
+                }
+//                key.cancel();
             }
         }
     }
