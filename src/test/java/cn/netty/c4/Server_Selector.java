@@ -42,6 +42,9 @@ public class Server_Selector {
             Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
             while(iter.hasNext()) {
                 SelectionKey key = iter.next();
+                // select在事件发生后,就会将相关的key放入selectedKeys集合,但不会在处理完后从selectedKeys 集合中移除,需要我们自己编码删除
+                // 第二次触发了sckey上的read事件,但这时selectedKeys中还有上次的ssckey,
+                // 在处理时因为没有真正的serverSocket连上了,就会导致空指针异常
                 log.debug("key:{}",key);
                 //5.区分事件类型
                 if (key.isAcceptable()) { // 如果是accept
