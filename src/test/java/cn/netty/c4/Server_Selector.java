@@ -92,7 +92,7 @@ public class Server_Selector {
                             if (buffer.position() == buffer.limit()) {
                                 ByteBuffer newBuffer = ByteBuffer.allocate(buffer.capacity() * 2); //扩容
                                 buffer.flip();
-                                newBuffer.put(buffer); //0123456789abcdef
+                                newBuffer.put(buffer); //0123456789abcdef(把原buffer内容copy到新扩容的buffer中)
                                 key.attach(newBuffer); //替换原buffer
                             }
                         }
