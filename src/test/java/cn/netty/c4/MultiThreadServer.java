@@ -5,11 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static cn.netty.c1.ByteBufferUtil.debugAll;
 
@@ -25,7 +23,7 @@ public class MultiThreadServer {
         ssc.bind(new InetSocketAddress(8080));
         //1.创建固定数量的worker并初始化
         Worker worker = new Worker("worker-0");
-        worker.register();
+
         while (true) {
             boss.select();
             Iterator<SelectionKey> iter = boss.selectedKeys().iterator();
@@ -38,7 +36,8 @@ public class MultiThreadServer {
                     log.debug("connected...{}",sc.getRemoteAddress());
                     //2.关联selector
                     log.debug("before register...{}",sc.getRemoteAddress());
-                    sc.register(worker.selector,SelectionKey.OP_READ,null);
+                    worker.register(sc);  //初始化selector,启动worker-0
+
                     log.debug("after register...{}",sc.getRemoteAddress());
                 }
             }
@@ -50,24 +49,38 @@ public class MultiThreadServer {
         private Selector selector;
         private String name;
         private volatile boolean start = false; //还未初始化
+        private ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
 
         public Worker(String name) {this.name = name;}
 
         //初始化线程和selector
-        public void register() throws IOException {
+        public void register(SocketChannel sc) throws IOException {
             if (!start) {
                 thread = new Thread(this,name);
                 thread.start();
                 selector = Selector.open();
                 start = true;
             }
+            // 向队列添加了任务,但这个任务并没有立刻执行(队列完成两个线程之间的通信)
+            queue.add(()-> {
+                try {
+                    sc.register(selector,SelectionKey.OP_READ,null); //boss
+                } catch (ClosedChannelException e) {
+                    e.printStackTrace();
+                }
+            });
+            selector.wakeup(); //唤醒select方法
         }
 
         @Override
         public void run() {
             while (true) {
                 try {
-                    selector.select();
+                    selector.select();  //worker-0
+                    Runnable task = queue.poll();
+                    if (task != null) {
+                        task.run(); //执行了sc.register(selector,SelectionKey.OP_READ,null);
+                    }
                     Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                     while (iter.hasNext()) {
                         SelectionKey key = iter.next();
