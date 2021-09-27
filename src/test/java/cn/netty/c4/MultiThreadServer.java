@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.netty.c1.ByteBufferUtil.debugAll;
 
@@ -22,6 +23,11 @@ public class MultiThreadServer {
         bossKey.interestOps(SelectionKey.OP_ACCEPT);
         ssc.bind(new InetSocketAddress(8080));
         //1.创建固定数量的worker并初始化
+        Worker[] workers = new Worker[2];
+        for (int i = 0; i < workers.length;i++) {
+            workers[i] = new Worker("worker-" + i);
+        }
+        AtomicInteger index = new AtomicInteger();
         Worker worker = new Worker("worker-0");
 
         while (true) {
@@ -36,7 +42,8 @@ public class MultiThreadServer {
                     log.debug("connected...{}",sc.getRemoteAddress());
                     //2.关联selector
                     log.debug("before register...{}",sc.getRemoteAddress());
-                    worker.register(sc);  //初始化selector,启动worker-0
+                    // round-robin轮询
+                    workers[index.getAndIncrement() % workers.length].register(sc);  //初始化selector,启动worker-0
 
                     log.debug("after register...{}",sc.getRemoteAddress());
                 }
