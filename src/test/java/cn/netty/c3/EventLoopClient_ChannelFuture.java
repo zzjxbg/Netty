@@ -26,7 +26,7 @@ public class EventLoopClient_ChannelFuture {
                 // 1. 连接到服务器
                 // connect方法异步非阻塞,main方法发起调用,真正执行connect是nio线程
                 .connect(new InetSocketAddress("localhost",8080));  // 1s后连接上
-//        channelFuture.sync();
+        channelFuture.sync();
         // 无阻塞向下执行获取channel
         // connect 方法是异步的,意味着不等连接建立,方法执行就返回了
         // 因此channelFuture对象中不能立刻获得到正确的Channel对象
