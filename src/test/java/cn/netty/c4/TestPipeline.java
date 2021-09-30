@@ -42,13 +42,6 @@ public class TestPipeline {
                                 super.channelRead(ctx,student);
                             }
                         });
-                        pipeline.addLast("h3",new ChannelInboundHandlerAdapter(){
-                            @Override
-                            public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
-                                log.debug("3,结果{},class:{}",msg,msg.getClass());
-                                ch.writeAndFlush(ctx.alloc().buffer().writeBytes("server...".getBytes()));
-                            }
-                        });
                         pipeline.addLast("h4",new ChannelOutboundHandlerAdapter(){
                             @Override
                             public void write(ChannelHandlerContext ctx,Object msg,ChannelPromise promise) throws Exception {
@@ -56,6 +49,17 @@ public class TestPipeline {
                                 super.write(ctx,msg,promise);
                             }
                         });
+                        pipeline.addLast("h3",new ChannelInboundHandlerAdapter(){
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+                                log.debug("3,结果{},class:{}",msg,msg.getClass());
+                                // 从当前节点找上一个出站处理器
+//                                ctx.writeAndFlush(ctx.alloc().buffer().writeBytes("server...".getBytes()));
+                                // 从尾部开始触发后续出站处理器的执行
+                                ch.writeAndFlush(ctx.alloc().buffer().writeBytes("server...".getBytes()));
+                            }
+                        });
+
                         pipeline.addLast("h5",new ChannelOutboundHandlerAdapter(){
                             @Override
                             public void write(ChannelHandlerContext ctx,Object msg,ChannelPromise promise) throws Exception {
