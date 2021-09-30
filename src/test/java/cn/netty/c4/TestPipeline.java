@@ -1,11 +1,16 @@
 package cn.netty.c4;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.Charset;
 
 @Slf4j
 public class TestPipeline {
@@ -23,21 +28,24 @@ public class TestPipeline {
                             @Override
                             public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
                                 log.debug("1");
-                                super.channelRead(ctx,msg);
+                                ByteBuf buf = (ByteBuf) msg;
+                                String name = buf.toString(Charset.defaultCharset());
+                                super.channelRead(ctx,name);  // 将数据传给下一个入站处理器,如果不调用,调用链会断开
+                                //ctx.fireChannelRead(student);
                             }
                         });
                         pipeline.addLast("h2",new ChannelInboundHandlerAdapter(){
                             @Override
-                            public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+                            public void channelRead(ChannelHandlerContext ctx,Object name) throws Exception {
                                 log.debug("2");
-                                super.channelRead(ctx,msg);
+                                Student student = new Student(name.toString());
+                                super.channelRead(ctx,student);
                             }
                         });
                         pipeline.addLast("h3",new ChannelInboundHandlerAdapter(){
                             @Override
                             public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
-                                log.debug("3");
-                                super.channelRead(ctx,msg);
+                                log.debug("3,结果{},class:{}",msg,msg.getClass());
                                 ch.writeAndFlush(ctx.alloc().buffer().writeBytes("server...".getBytes()));
                             }
                         });
@@ -65,5 +73,10 @@ public class TestPipeline {
                     }
                 }).
                 bind(8080);
+    }
+    @Data
+    @AllArgsConstructor
+    static class Student {
+        private String name;
     }
 }
