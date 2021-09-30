@@ -10,6 +10,7 @@ public class TestByteBuf {
     public static void main(String[] args) {
 
         ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
+        System.out.println(buf.getClass()); // 显示是否池化和内存模式(直接内存&堆内存)
         log(buf);
         StringBuilder sb = new StringBuilder();
         for (int i = 0;i < 32;i++) {
