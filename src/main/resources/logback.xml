@@ -35,4 +35,8 @@
     <root level="ERROR">
         <appender-ref ref="STDOUT"/>
     </root>
+
+    <logger name="org.example" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
 </configuration>
